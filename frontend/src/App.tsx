@@ -13,6 +13,7 @@ import {
 import { createTheme } from '@mui/material/styles';
 import MovieIcon from '@mui/icons-material/Movie';
 import { MoviesPage } from './pages/MoviesPage';
+import { MovieDetailsPage } from './pages/MovieDetailsPage';
 
 // Create pages later
 const HomePage = () => (
@@ -70,6 +71,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/movies" element={<MoviesPage />} />
+                <Route path="/movies/:id" element={<MovieDetailsPage />} />
                 <Route path="/recommendations" element={<RecommendationsPage />} />
               </Routes>
             </Container>

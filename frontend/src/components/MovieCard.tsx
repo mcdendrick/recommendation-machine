@@ -1,25 +1,35 @@
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardMedia, Typography, Chip, Stack, Rating, Box } from '@mui/material';
 import { Movie } from '../types/movie';
 
 interface MovieCardProps {
     movie: Movie;
-    onClick?: () => void;
 }
 
 const DEFAULT_MOVIE_POSTER = '/movie-placeholder.jpg'; // You'll need to add this image to your public folder
 
-export const MovieCard = ({ movie, onClick }: MovieCardProps) => {
+export const MovieCard = ({ movie }: MovieCardProps) => {
+    const navigate = useNavigate();
+
+    const handleClick = () => {
+        navigate(`/movies/${movie.id}`);
+    };
+
     return (
         <Card 
             sx={{ 
                 maxWidth: 345, 
-                cursor: onClick ? 'pointer' : 'default',
-                '&:hover': onClick ? { transform: 'scale(1.02)', transition: 'transform 0.2s' } : {},
+                cursor: 'pointer',
+                '&:hover': {
+                    transform: 'scale(1.02)',
+                    transition: 'transform 0.2s',
+                    boxShadow: (theme) => theme.shadows[8]
+                },
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%'
             }}
-            onClick={onClick}
+            onClick={handleClick}
         >
             <CardMedia
                 component="img"
