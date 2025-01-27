@@ -26,6 +26,11 @@ export const movieApi = {
         return response.data;
     },
 
+    getSimilarMovies: async (movieId: number, limit: number = 6): Promise<Movie[]> => {
+        const response = await api.get<Movie[]>(`/recommendations/similar/${movieId}?limit=${limit}`);
+        return response.data;
+    },
+
     getRecommendations: async (userId: number, limit = 10) => {
         const response = await api.get<Movie[]>(`/recommendations/${userId}?limit=${limit}`);
         return response.data;
