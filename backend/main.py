@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 from services.tmdb_service import TMDBService
+from services.recommendation_service import RecommendationService
 
 app = FastAPI(title="Movie Recommendation Engine API")
 
@@ -15,6 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize services
+recommendation_service = RecommendationService()
 
 # Pydantic models
 class Movie(BaseModel):
@@ -70,16 +74,54 @@ async def get_movie(movie_id: int):
 
 @app.get("/recommendations/{user_id}", response_model=List[Movie])
 async def get_recommendations(user_id: int, limit: int = 10):
-    """Get movie recommendations for a user."""
-    # TODO: Implement actual recommendation logic
-    # For now, return popular movies as recommendations
+    """Get personalized movie recommendations for a user."""
     tmdb_service = TMDBService()
-    movies = await tmdb_service.get_popular_movies()
-    return movies[:limit]
+    
+    # Get movie IDs from recommendation service
+    movie_ids = await recommendation_service.get_hybrid_recommendations(user_id, limit)
+    
+    # Fetch full movie details
+    movies = []
+    for movie_id in movie_ids:
+        if movie := await tmdb_service.get_movie_details(movie_id):
+            movie['poster_path'] = tmdb_service.get_image_url(movie['poster_path'])
+            movies.append(movie)
+    
+    return movies
+
+@app.get("/recommendations/similar/{movie_id}", response_model=List[Movie])
+async def get_similar_movies(movie_id: int, limit: int = 10):
+    """Get similar movies based on content."""
+    tmdb_service = TMDBService()
+    
+    # Get similar movie IDs
+    movie_ids = await recommendation_service.get_content_based_recommendations(movie_id, limit)
+    
+    # Fetch full movie details
+    movies = []
+    for similar_id in movie_ids:
+        if movie := await tmdb_service.get_movie_details(similar_id):
+            movie['poster_path'] = tmdb_service.get_image_url(movie['poster_path'])
+            movies.append(movie)
+    
+    return movies
 
 @app.post("/interactions/")
 async def record_interaction(interaction: UserInteraction):
-    # TODO: Implement interaction recording in database
+    """Record a user's interaction with a movie."""
+    if interaction.rating is not None:
+        await recommendation_service.add_user_rating(
+            interaction.user_id,
+            interaction.movie_id,
+            interaction.rating
+        )
+    
+    if interaction.watched:
+        await recommendation_service.add_user_watch(
+            interaction.user_id,
+            interaction.movie_id
+        )
+    
     return {"status": "success", "message": "Interaction recorded"}
 
 if __name__ == "__main__":
