@@ -8,7 +8,8 @@ import {
   Box,
   CircularProgress,
   Typography,
-  Pagination
+  Pagination,
+  Alert
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { MovieCard } from '../components/MovieCard';
@@ -20,9 +21,11 @@ export const MoviesPage = () => {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 500);
 
-  const { data: movies, isLoading, error } = useQuery({
+  const { data: movies, isLoading, error, isFetching } = useQuery({
     queryKey: ['movies', debouncedSearch, page],
-    queryFn: () => movieApi.getMovies(page - 1, debouncedSearch),
+    queryFn: () => movieApi.getMovies(page, debouncedSearch || undefined),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    placeholderData: (previousData) => previousData, // Keep previous data while fetching
   });
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +67,13 @@ export const MoviesPage = () => {
           sx={{ mb: 4 }}
         />
 
-        {isLoading ? (
+        {debouncedSearch && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Showing results for "{debouncedSearch}"
+          </Alert>
+        )}
+
+        {(isLoading || isFetching) ? (
           <Box display="flex" justifyContent="center" my={4}>
             <CircularProgress />
           </Box>
@@ -78,15 +87,21 @@ export const MoviesPage = () => {
               ))}
             </Grid>
 
-            <Box display="flex" justifyContent="center" mt={4}>
-              <Pagination
-                count={10} // We'll update this with actual total pages later
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-              />
-            </Box>
+            {movies && movies.length > 0 ? (
+              <Box display="flex" justifyContent="center" mt={4}>
+                <Pagination
+                  count={10} // We'll update this with actual total pages later
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                />
+              </Box>
+            ) : (
+              <Typography align="center" color="text.secondary" mt={4}>
+                No movies found{debouncedSearch ? ` for "${debouncedSearch}"` : ''}.
+              </Typography>
+            )}
           </>
         )}
       </Box>

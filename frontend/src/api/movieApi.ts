@@ -8,8 +8,21 @@ const api = axios.create({
 });
 
 export const movieApi = {
-    getMovies: async (skip = 0, limit = 10) => {
-        const response = await api.get<Movie[]>(`/movies/?skip=${skip}&limit=${limit}`);
+    getMovies: async (page = 1, search?: string) => {
+        const params = new URLSearchParams({
+            page: page.toString()
+        });
+        
+        if (search) {
+            params.append('search', search);
+        }
+        
+        const response = await api.get<Movie[]>(`/movies/?${params}`);
+        return response.data;
+    },
+
+    getMovie: async (id: number): Promise<Movie> => {
+        const response = await api.get<Movie>(`/movies/${id}`);
         return response.data;
     },
 
