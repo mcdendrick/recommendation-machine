@@ -31,8 +31,18 @@ export const movieApi = {
         return response.data;
     },
 
-    getRecommendations: async (userId: number, limit = 10) => {
-        const response = await api.get<Movie[]>(`/recommendations/${userId}?limit=${limit}`);
+    getHybridRecommendations: async (userId: number, limit = 10) => {
+        const response = await api.get<Movie[]>(`/recommendations/hybrid/${userId}?limit=${limit}`);
+        return response.data;
+    },
+
+    getCollaborativeRecommendations: async (userId: number, limit = 10) => {
+        const response = await api.get<Movie[]>(`/recommendations/collaborative/${userId}?limit=${limit}`);
+        return response.data;
+    },
+
+    getContentBasedRecommendations: async (userId: number, limit = 10) => {
+        const response = await api.get<Movie[]>(`/recommendations/content/${userId}?limit=${limit}`);
         return response.data;
     },
 

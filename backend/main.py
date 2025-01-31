@@ -72,9 +72,9 @@ async def get_movie(movie_id: int):
         return movie
     raise HTTPException(status_code=404, detail="Movie not found")
 
-@app.get("/recommendations/{user_id}", response_model=List[Movie])
-async def get_recommendations(user_id: int, limit: int = 10):
-    """Get personalized movie recommendations for a user."""
+@app.get("/recommendations/hybrid/{user_id}", response_model=List[Movie])
+async def get_hybrid_recommendations(user_id: int, limit: int = 10):
+    """Get hybrid (collaborative + content-based) recommendations for a user."""
     tmdb_service = TMDBService()
     
     # Get movie IDs from recommendation service
@@ -89,20 +89,47 @@ async def get_recommendations(user_id: int, limit: int = 10):
     
     return movies
 
-@app.get("/recommendations/similar/{movie_id}", response_model=List[Movie])
-async def get_similar_movies(movie_id: int, limit: int = 10):
-    """Get similar movies based on content."""
+@app.get("/recommendations/collaborative/{user_id}", response_model=List[Movie])
+async def get_collaborative_recommendations(user_id: int, limit: int = 10):
+    """Get recommendations based on similar users' preferences."""
     tmdb_service = TMDBService()
     
-    # Get similar movie IDs
-    movie_ids = await recommendation_service.get_content_based_recommendations(movie_id, limit)
+    # Get movie IDs from recommendation service
+    movie_ids = await recommendation_service.get_collaborative_recommendations(user_id, limit)
     
     # Fetch full movie details
     movies = []
-    for similar_id in movie_ids:
-        if movie := await tmdb_service.get_movie_details(similar_id):
+    for movie_id in movie_ids:
+        if movie := await tmdb_service.get_movie_details(movie_id):
             movie['poster_path'] = tmdb_service.get_image_url(movie['poster_path'])
             movies.append(movie)
+    
+    return movies
+
+@app.get("/recommendations/content/{user_id}", response_model=List[Movie])
+async def get_content_based_recommendations_for_user(user_id: int, limit: int = 10):
+    """Get content-based recommendations for a user based on their most recently watched movie."""
+    tmdb_service = TMDBService()
+    
+    # If user has watched movies, get recommendations based on their last watch
+    if user_id in recommendation_service.user_watches and recommendation_service.user_watches[user_id]:
+        last_watched_movie = recommendation_service.user_watches[user_id][-1]
+        movie_ids = await recommendation_service.get_content_based_recommendations(last_watched_movie, limit)
+        
+        # Fetch full movie details
+        movies = []
+        for movie_id in movie_ids:
+            if movie := await tmdb_service.get_movie_details(movie_id):
+                movie['poster_path'] = tmdb_service.get_image_url(movie['poster_path'])
+                movies.append(movie)
+    else:
+        # If no watch history, get and process popular movies
+        raw_movies = await tmdb_service.get_popular_movies()
+        movies = []
+        for movie in raw_movies[:limit]:
+            if details := await tmdb_service.get_movie_details(movie['id']):
+                details['poster_path'] = tmdb_service.get_image_url(details['poster_path'])
+                movies.append(details)
     
     return movies
 

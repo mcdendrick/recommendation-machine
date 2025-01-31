@@ -14,6 +14,7 @@ import { createTheme } from '@mui/material/styles';
 import MovieIcon from '@mui/icons-material/Movie';
 import { MoviesPage } from './pages/MoviesPage';
 import { MovieDetailsPage } from './pages/MovieDetailsPage';
+import { RecommendationsPage } from './pages/RecommendationsPage';
 
 // Create pages later
 const HomePage = () => (
@@ -31,8 +32,6 @@ const HomePage = () => (
     </Box>
   </Container>
 );
-
-const RecommendationsPage = () => <div>Recommendations - Coming Soon</div>;
 
 const theme = createTheme({
   palette: {
